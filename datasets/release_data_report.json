@@ -1,0 +1,50 @@
+{
+  "release": "OpenDoor Global 4.0",
+  "generated_on": "2026-11-19",
+  "program_directory_seed_records": 52,
+  "source_registry_records": 61,
+  "user_student_dataset": {
+    "dataset_name": "student_program_data.csv",
+    "provenance": "User supplied from the EvalCommunity student-program dataset generator workflow; generator link supplied by user.",
+    "classification": "sample_or_generated_student_program_data",
+    "use_policy": "Do not use as a live opportunities catalogue, real-world impact evidence, admissions predictor, or individual eligibility source. Use only for schema testing and demonstration analytics unless its provenance and license are independently confirmed.",
+    "rows": 500,
+    "columns": 10,
+    "column_names": [
+      "ID",
+      "Age",
+      "Gender",
+      "Prior Education",
+      "Attendance Rate",
+      "Test Scores",
+      "Family Income",
+      "Distance to School",
+      "Parent Engagement",
+      "Completed Program"
+    ],
+    "age": {
+      "minimum": 16,
+      "maximum": 25,
+      "mean": 20.63
+    },
+    "test_scores": {
+      "minimum": 50,
+      "maximum": 100,
+      "mean": 75.69
+    },
+    "completed_program_counts": {
+      "Yes": 402,
+      "No": 98
+    },
+    "prior_education_counts": {
+      "Some College": 141,
+      "Bachelor's": 135,
+      "High School": 113,
+      "Vocational": 111
+    },
+    "missing_cells": 0,
+    "review_note": "The file has 500 rows and 10 columns. It contains no program names, organizer URLs, deadlines or eligibility records; it cannot populate the opportunity catalogue."
+  },
+  "important_limitation": "No live web research was available during this build. Source URLs are discovery pointers and every seed is pending review. No record claims current application availability unless explicitly noted.",
+  "dataset_separation": "The 500-row student_program_data.csv is not an opportunity catalogue and is not used in eligibility matching."
+}

@@ -1,0 +1,31 @@
+OPENDOOR GITHUB PAGES UPLOAD PACK (NO PYTHON REQUIRED)
+
+IMPORTANT: Upload the CONTENTS of this folder to the ROOT of the GitHub repository Abeni-style/OpenDoor.
+Do not upload the containing folder as a nested folder.
+
+METHOD A - GitHub website upload:
+1. Extract this ZIP using Windows File Explorer (right-click > Extract All).
+2. Open https://github.com/Abeni-style/OpenDoor
+3. Click Add file > Upload files.
+4. Select all extracted website files and folders EXCEPT this instruction file if you prefer; include index.html, styles.css, app.js, data.js, backend-config.js, backend.js, assets/, locales/, .nojekyll, VERSION, robots.txt, pitch-tour.css and pitch-tour.js.
+5. Drag these files/folders into the GitHub upload area. Keep the folder structure intact.
+6. Scroll down. Commit directly to the main branch with message: Publish OpenDoor static website.
+7. Wait for upload/commit to finish.
+8. Open Settings > Pages. Under Build and deployment choose Deploy from a branch. Select branch main and folder /(root). Click Save.
+9. Wait for GitHub Pages to finish publishing. The expected URL is https://abeni-style.github.io/OpenDoor/ . GitHub Pages will show the exact URL in Settings > Pages.
+10. Open that URL in a private/incognito window and test all sections.
+
+METHOD B - GitHub Desktop:
+1. Install GitHub Desktop from https://desktop.github.com/ and sign in.
+2. Clone Abeni-style/OpenDoor.
+3. Copy all contents of this extracted folder (except this instruction file) into the cloned repository folder.
+4. In GitHub Desktop, enter summary: Publish OpenDoor static website.
+5. Click Commit to main, then Push origin.
+6. Enable Pages as in steps 8-10 above.
+
+No Python is required for this publishing method. The ZIP already contains the prebuilt public website.
+
+SECURITY:
+- backend-config.js contains only blank public configuration placeholders.
+- Never upload a service-role key, OpenAI API key, Stripe secret, Telegram bot token, database password, or webhook secret.
+- Static hosting publishes only the public website. Supabase, AI, accounts, reviews, payments, and scheduled opportunity synchronization still need separate backend setup.

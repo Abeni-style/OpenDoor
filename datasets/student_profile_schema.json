@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Minimal profile fields for local opportunity matching; avoid sensitive personal data.",
+  "fields": {
+    "country_of_residence": "string",
+    "age": "integer",
+    "education_level": "string",
+    "grade_or_year": "string",
+    "interests": [
+      "string"
+    ],
+    "opportunity_categories": [
+      "string"
+    ],
+    "funding_preference": "string",
+    "language_preferences": [
+      "string"
+    ],
+    "accessibility_preferences": "optional string; do not request diagnosis"
+  },
+  "privacy_note": "Do not collect passwords, government IDs, passport numbers, precise addresses, financial account details or sensitive health information."
+}

@@ -1,0 +1,10 @@
+{
+  "input": "datasets/global_opportunities_seed.csv",
+  "rows_read": 52,
+  "valid_rows": 52,
+  "rejected_rows": 0,
+  "warning_count": 0,
+  "checked_on": "2026-11-19",
+  "warnings": [],
+  "issues": []
+}

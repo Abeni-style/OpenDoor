@@ -1,0 +1,1 @@
+English is the implemented interface language. `am.template.json` is a key template for a future Amharic translation; blank values are intentional. The interface does not yet switch languages. Tigrinya is outside the current scope. Use a fluent Amharic reviewer before publishing a translation.

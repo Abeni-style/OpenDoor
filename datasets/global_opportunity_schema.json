@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:opendoor:schema:global-opportunity:1.0",
+  "title": "OpenDoor Global Opportunity Record",
+  "description": "Canonical, source-linked record for a scholarship, competition, research program, internship, course or other student opportunity.",
+  "type": "object",
+  "required": [
+    "title",
+    "provider",
+    "category",
+    "description",
+    "official_url"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 2
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Scholarship",
+        "Competition",
+        "Research",
+        "Fellowship",
+        "Internship",
+        "Apprenticeship",
+        "Volunteering",
+        "Youth Program",
+        "Conference",
+        "Summer School",
+        "Exchange",
+        "Grant",
+        "Course",
+        "Bootcamp",
+        "Mentorship",
+        "Award",
+        "Incubator",
+        "Other"
+      ]
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 12
+    },
+    "official_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "application_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "min_age": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "max_age": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "age_notes": {
+      "type": "string"
+    },
+    "eligible_countries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "excluded_countries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "education_levels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "grades": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "modality": {
+      "type": "string",
+      "enum": [
+        "Online",
+        "In person",
+        "Hybrid",
+        "Self-paced",
+        "Not stated"
+      ]
+    },
+    "host_country": {
+      "type": "string"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "funding_type": {
+      "type": "string",
+      "enum": [
+        "Fully funded",
+        "Partially funded",
+        "Tuition only",
+        "Stipend",
+        "Fee-based",
+        "No fee",
+        "Unfunded",
+        "Not stated"
+      ]
+    },
+    "funding_details": {
+      "type": "string"
+    },
+    "fee": {
+      "type": "string"
+    },
+    "opens_on": {
+      "type": "string"
+    },
+    "deadline": {
+      "type": "string"
+    },
+    "deadline_timezone": {
+      "type": "string"
+    },
+    "deadline_type": {
+      "type": "string",
+      "enum": [
+        "Fixed",
+        "Rolling",
+        "Not stated",
+        "Fixed/unknown"
+      ]
+    },
+    "opportunity_status": {
+      "type": "string",
+      "enum": [
+        "Open",
+        "Closed",
+        "Upcoming",
+        "Open/unknown"
+      ]
+    },
+    "duration": {
+      "type": "string"
+    },
+    "required_documents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "application_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_type": {
+      "type": "string"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "verified",
+        "needs_update",
+        "closed",
+        "expired"
+      ],
+      "default": "pending_review"
+    },
+    "last_checked": {
+      "type": "string"
+    },
+    "next_review": {
+      "type": "string"
+    },
+    "verified_by": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verification_status": {
+            "const": "verified"
+          }
+        },
+        "required": [
+          "verification_status"
+        ]
+      },
+      "then": {
+        "required": [
+          "last_checked",
+          "verified_by"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "min_age",
+          "max_age"
+        ],
+        "properties": {
+          "min_age": {
+            "type": "integer"
+          },
+          "max_age": {
+            "type": "integer"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "max_age": {
+            "minimum": 0
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

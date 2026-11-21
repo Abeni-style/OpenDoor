@@ -1,0 +1,17 @@
+/* OpenDoor guided competition walkthrough */
+.od-tour-backdrop{position:fixed;inset:0;z-index:1200;background:rgba(3,7,18,.78);backdrop-filter:blur(12px);display:grid;place-items:center;padding:20px}
+.od-tour-backdrop[hidden]{display:none}
+.od-tour-dialog{width:min(760px,100%);max-height:min(88vh,760px);overflow:auto;background:#0d1529;border:1px solid #8d7dff55;border-radius:24px;box-shadow:0 28px 90px #0009;color:#eef2ff;padding:26px}
+.od-tour-top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+.od-tour-kicker{font:800 10px/1.4 Manrope,Arial,sans-serif;letter-spacing:.16em;color:#a99cff}
+.od-tour-close{width:38px;height:38px;border-radius:50%;border:1px solid #ffffff2b;background:#ffffff0a;color:#fff;font-size:22px;cursor:pointer}
+.od-tour-dialog h2{font:800 clamp(25px,4vw,36px)/1.12 Manrope,Arial,sans-serif;letter-spacing:-.04em;margin:0 0 10px}
+.od-tour-dialog .od-tour-lede{font-size:14px;line-height:1.7;color:#b9c4d9;max-width:650px;margin:0 0 22px}
+.od-tour-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.od-tour-step{border:1px solid #ffffff18;border-radius:16px;background:linear-gradient(145deg,#ffffff0d,#ffffff04);padding:17px;min-height:155px;display:flex;flex-direction:column;align-items:flex-start}
+.od-tour-step .number{font:800 11px Manrope;color:#a99cff;letter-spacing:.1em}
+.od-tour-step h3{font:800 17px Manrope;margin:10px 0 6px;color:#f5f6ff}
+.od-tour-step p{font-size:12px;line-height:1.6;color:#aebbd2;margin:0 0 15px;flex:1}
+.od-tour-step button{border:0;background:transparent;padding:0;color:#9ce5e0;font-weight:800;cursor:pointer}
+.od-tour-note{font-size:11px;color:#98a5bf;line-height:1.6;margin:18px 0 0;border-top:1px solid #ffffff16;padding-top:14px}
+@media(max-width:600px){.od-tour-grid{grid-template-columns:1fr}.od-tour-dialog{padding:20px}.od-pitch-tour-trigger{margin-top:4px}}

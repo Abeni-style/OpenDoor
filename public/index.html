@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080d1c">
+<meta name="description" content="OpenDoor helps students discover opportunities, understand eligibility, build practical skills and prepare for their next step.">
+<link rel="icon" href="assets/opendoor-mark.svg" type="image/svg+xml">
+<title>OpenDoor | Discover opportunity. Develop potential.</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="backend.css"><link rel="stylesheet" href="pitch-tour.css">
+</head>
+<body>
+<div class="announcement">● Global student platform · Opportunity details must be checked with official providers.</div>
+<header class="topbar"><a class="brand" href="#home"><img class="brand-logo" src="assets/opendoor-logo.svg" alt="OpenDoor"><span class="brand-mobile-name">OpenDoor<small>Find opportunities. Build skills. Move forward.</small></span></a><button id="menuBtn" class="menu" aria-label="Toggle navigation">☰</button><nav id="nav"><a href="#home">Home</a><a href="#opportunities">Opportunities</a><a href="#matcher">Smart Matcher</a><a href="#academy">Academy</a><a href="#prepare">Prepare & Apply</a><a href="#resources">Resources</a><a href="#data">Data & Sources</a><a href="#plans">Plans</a><a href="#feedback">Feedback</a></nav><button class="btn btn-light btn-sm" data-act="export">Export data</button></header>
+<main id="view"></main>
+<footer><div class="footer-inner"><div><div class="brand"><img class="brand-logo footer-logo" src="assets/opendoor-logo.svg" alt="OpenDoor"></div><p>Discover opportunity. Develop potential. Find a clearer route from learning to action.</p></div><div class="footer-links"><a href="#about">About & privacy</a><a href="#resources">Resources</a><a href="#data">Data & Sources</a><a href="#plans">Plans</a><a href="#feedback">Feedback</a></div></div><div class="footer-bottom">© <span id="year"></span> OpenDoor · Verify requirements with the official provider before applying.</div></footer>
+<div id="toast" class="toast" aria-live="polite"></div><input type="file" id="importFile" accept="application/json" hidden>
+<div id="odAssistantRoot"></div><div id="odAccountRoot"></div>
+<script src="backend-config.js" onerror="window.OPENDOOR_CONFIG=window.OPENDOOR_CONFIG||{}"></script>
+<script src="data.js"></script><script src="app.js"></script><script src="backend.js"></script><script src="pitch-tour.js"></script>
+</body></html>

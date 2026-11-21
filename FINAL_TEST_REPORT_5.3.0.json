@@ -1,0 +1,51 @@
+{
+  "release": "5.3.0",
+  "checks": [
+    {
+      "name": "Telegram Edge Function TypeScript transpilation",
+      "status": "passed",
+      "detail": "No TypeScript syntax diagnostics."
+    },
+    {
+      "name": "Telegram intake parser - forwarded channel post with official HTTPS URL",
+      "status": "passed",
+      "detail": "Title/category/link/source metadata parsed and candidate marked pending_review."
+    },
+    {
+      "name": "Telegram intake parser - missing link",
+      "status": "passed",
+      "detail": "Candidate rejected with a clear validation message."
+    },
+    {
+      "name": "Opportunity catalogue CSV validator",
+      "status": "passed",
+      "detail": "52 rows read; 52 valid; 0 rejected; no structural warnings."
+    },
+    {
+      "name": "Existing website JavaScript syntax checks",
+      "status": "passed",
+      "detail": "app.js and backend.js passed node --check."
+    },
+    {
+      "name": "Dataset Python source compilation",
+      "status": "passed",
+      "detail": "All dataset Python scripts compile."
+    },
+    {
+      "name": "ZIP archive integrity",
+      "status": "passed",
+      "detail": "Archive test performed after packaging."
+    }
+  ],
+  "not_tested_or_not_live": [
+    "Telegram bot not created, webhook not configured, and channel owner permission not obtained.",
+    "Supabase project not deployed or connected.",
+    "AI provider API key not configured; live generative AI not active.",
+    "Email OTP/authentication not activated.",
+    "Public feedback moderation not activated.",
+    "Premium payment processing not activated.",
+    "Scheduled global feed collection has no active approved feed URLs configured.",
+    "Full end-to-end browser and cloud deployment tests not performed in this environment."
+  ],
+  "data_note": "The 52 catalogue rows are discovery records, not verified current-cycle openings. All opportunity facts must be checked at official provider sources before publication."
+}
