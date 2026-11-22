@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: opendoor-supabase-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy-functions:
     runs-on: ubuntu-latest
@@ -37,5 +41,5 @@ jobs:
           set -e
           for function_name in student-assistant submit-feedback create-checkout stripe-webhook ingest-candidates billing-status telegram-intake; do
             echo "Deploying ${function_name}..."
-            supabase functions deploy "${function_name}" --project-ref hkhbiujfbysqtlqtuidx
+            supabase functions deploy "${function_name}" --project-ref hkhbiujfbysqtlqtuidx --yes
           done
