@@ -2,6 +2,11 @@ name: Deploy OpenDoor Supabase Edge Functions
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/deploy-supabase.yml'
 
 permissions:
   contents: read
@@ -32,5 +37,5 @@ jobs:
           set -e
           for function_name in student-assistant submit-feedback create-checkout stripe-webhook ingest-candidates billing-status telegram-intake; do
             echo "Deploying ${function_name}..."
-            supabase functions deploy "${function_name}" --project-ref hkhbiujfbysqt1quid
+            supabase functions deploy "${function_name}" --project-ref hkhbiujfbysqtlqtuidx
           done
