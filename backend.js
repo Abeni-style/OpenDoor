@@ -126,6 +126,7 @@
               <button class="od-modal-secondary" id="odEnableCloudSync" type="button">Enable cloud backup</button>
               <button class="od-modal-secondary" id="odSyncNow" type="button" hidden>Sync now</button>
               <button class="od-modal-secondary" id="odDisableCloudSync" type="button" hidden>Disable sync on this device</button>
+              <button class="od-modal-secondary" id="odDeleteCloudBackup" type="button" hidden>Delete cloud backup</button>
             </div>
             <p class="od-account-status" id="odCloudSyncStatus" role="status">Cloud backup is off.</p>
             <small>Cloud backup stores selected student data in your account. If you are under 18, enable it only with the required parent/guardian permission. Avoid adding sensitive information to task titles.</small>
@@ -285,10 +286,11 @@
   const cloudSyncEnabled=()=>Boolean(session?.user?.id&&localStorage.getItem(syncKeyFor(session.user.id))==='yes');
   function refreshCloudSyncUI(){
     const enabled=cloudSyncEnabled();
-    const enable=$('#odEnableCloudSync'),now=$('#odSyncNow'),disable=$('#odDisableCloudSync'),status=$('#odCloudSyncStatus');
+    const enable=$('#odEnableCloudSync'),now=$('#odSyncNow'),disable=$('#odDisableCloudSync'),remove=$('#odDeleteCloudBackup'),status=$('#odCloudSyncStatus');
     if(enable)enable.hidden=enabled;
     if(now)now.hidden=!enabled;
     if(disable)disable.hidden=!enabled;
+    if(remove)remove.hidden=!enabled;
     if(status&&status.textContent==='')status.textContent=enabled?'Cloud backup is enabled on this device.':'Cloud backup is off.';
   }
   async function writeCloudWorkspace(){
@@ -337,6 +339,21 @@
     localStorage.removeItem(syncKeyFor(session.user.id));
     refreshCloudSyncUI();
     const status=$('#odCloudSyncStatus');if(status)status.textContent='Automatic cloud backup is now off. Your existing server backup has not been deleted.';
+  });
+  $('#odDeleteCloudBackup')?.addEventListener('click',async()=>{
+    if(!authClient||!session?.user?.id)return;
+    const confirmed=confirm('Permanently delete the cloud backup stored in your OpenDoor account? This does not delete your OpenDoor sign-in account or local browser data.');
+    if(!confirmed)return;
+    const button=$('#odDeleteCloudBackup');if(button)button.disabled=true;
+    try{
+      const {error}=await authClient.from('student_workspaces').delete().eq('user_id',session.user.id);
+      if(error)throw error;
+      localStorage.removeItem(syncKeyFor(session.user.id));
+      refreshCloudSyncUI();
+      const status=$('#odCloudSyncStatus');if(status)status.textContent='Cloud backup deleted. Your local browser workspace has not been changed.';
+    }catch(error){
+      const status=$('#odCloudSyncStatus');if(status)status.textContent=error.message||'Cloud backup could not be deleted.';
+    }finally{if(button)button.disabled=false;}
   });
   let cloudSyncTimer=null;
   window.addEventListener('opendoor:local-state-changed',()=>{
