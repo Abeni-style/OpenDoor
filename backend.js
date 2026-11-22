@@ -89,30 +89,102 @@
     finally { assistantBusy=false; $('#odChatSend').disabled=false; input.focus(); }
   });
 
-  // Passwordless email OTP account modal. Session remains in sessionStorage only.
+  // Supabase Auth: email OTP, Google OAuth and optional phone OTP.
   const accountRoot=$('#odAccountRoot');
   if(accountRoot) accountRoot.innerHTML=`
     <button class="od-account-btn" id="odAccountOpen">${session?.user?.email?'Account':'Sign in'}</button>
     <div class="od-modal-backdrop" id="odAccountModal" hidden><section class="od-account-modal" role="dialog" aria-modal="true" aria-labelledby="odAccountTitle">
-      <button class="od-modal-close" id="odAccountClose" aria-label="Close">×</button><span class="od-modal-kicker">PASSWORDLESS ACCOUNT</span><h2 id="odAccountTitle">Your OpenDoor workspace</h2>
-      <p>Use an email one-time code. No password is needed. Only share the minimum information required. For younger students, follow applicable parent/guardian consent rules.</p>
-      <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Send sign-in code</button></form>
-      <form id="odOtpVerify" hidden><label>Six-digit email code</label><input id="odOtpCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000"><button class="od-modal-primary">Verify and sign in</button></form>
-      <button class="od-modal-secondary" id="odSignOut" hidden>Sign out of this browser</button><p class="od-account-status" id="odAccountStatus" role="status"></p>
-      <small>Account services are unavailable until the site administrator connects the backend. Do not use a shared device for a personal session.</small>
+      <button class="od-modal-close" id="odAccountClose" aria-label="Close">×</button><span class="od-modal-kicker">YOUR STUDENT WORKSPACE</span><h2 id="odAccountTitle">Sign in to OpenDoor</h2>
+      <p>Choose a sign-in method. Use only an account you are authorized to use. Never share verification codes.</p>
+      <button class="od-modal-secondary" id="odGoogleSignIn" type="button">Continue with Google</button>
+      <div class="od-auth-divider">OR USE EMAIL</div>
+      <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Send email code</button></form>
+      <button class="od-modal-secondary" id="odUsePhone" type="button">Use a phone number instead</button>
+      <form id="odPhoneRequest" hidden><label>Phone number (international format)</label><input type="tel" id="odPhone" maxlength="16" autocomplete="tel" inputmode="tel" pattern="\\+[1-9][0-9]{7,14}" placeholder="+2519XXXXXXXX" required><button class="od-modal-primary">Send SMS code</button><small>SMS sign-in is available only after the administrator configures a supported SMS provider.</small></form>
+      <form id="odOtpVerify" hidden><label>Six-digit verification code</label><input id="odOtpCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000"><button class="od-modal-primary">Verify and sign in</button></form>
+      <button class="od-modal-secondary" id="odSignOut" hidden>Sign out</button><p class="od-account-status" id="odAccountStatus" role="status"></p>
+      <small>Only the minimum information needed for an account should be collected. For younger students, follow applicable parent/guardian consent and privacy rules.</small>
     </section></div>`;
   const topbar = $('.topbar');
   if (topbar && $('#odAccountOpen')) {
     const exportButton = topbar.querySelector('[data-act="export"]');
     topbar.insertBefore($('#odAccountOpen'), exportButton || null);
   }
+  const authClient = ready && window.supabase?.createClient
+    ? window.supabase.createClient(base, anon, { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'pkce' } })
+    : null;
+  let otpMethod='email', otpContact='';
   function setAccountStatus(s){const el=$('#odAccountStatus');if(el)el.textContent=s;}
-  function refreshAccountButton(){const b=$('#odAccountOpen');if(b)b.textContent=session?.user?.email?'My account':'Sign in';const out=$('#odSignOut');if(out)out.hidden=!session;}
-  $('#odAccountOpen')?.addEventListener('click',()=>{$('#odAccountModal').hidden=false;refreshAccountButton();setAccountStatus(ready?'Sign in with an email code.':'Backend not connected.');});
+  function refreshAccountButton(){const b=$('#odAccountOpen');if(b)b.textContent=session?.user?.email?'My account':session?.user?.phone?'My account':'Sign in';const out=$('#odSignOut');if(out)out.hidden=!session;}
+  if(authClient){
+    authClient.auth.getSession().then(({data,error})=>{
+      if(data?.session){saveSession(data.session);refreshAccountButton();}
+      else if(error)console.warn('Supabase session check failed.');
+    });
+    authClient.auth.onAuthStateChange((_event,newSession)=>{
+      if(newSession){saveSession(newSession);refreshAccountButton();}
+      else if(!session){refreshAccountButton();}
+    });
+  }
+  $('#odAccountOpen')?.addEventListener('click',()=>{
+    $('#odAccountModal').hidden=false;refreshAccountButton();
+    setAccountStatus(!ready?'Backend not connected.':!authClient?'Authentication library did not load. Refresh the page.':'Choose Google or email. Phone requires SMS-provider configuration.');
+  });
   $('#odAccountClose')?.addEventListener('click',()=>$('#odAccountModal').hidden=true);
-  $('#odOtpRequest')?.addEventListener('submit',async e=>{e.preventDefault();try{if(!ready)throw new Error('Backend is not connected yet.');const email=$('#odEmail').value.trim();const r=await fetch(`${base}/auth/v1/otp`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${anon}`,'Content-Type':'application/json'},body:JSON.stringify({email,create_user:true})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.msg||data.message||'Could not send code.');$('#odOtpRequest').hidden=true;$('#odOtpVerify').hidden=false;setAccountStatus('A sign-in code was requested. Check your email.');}catch(err){setAccountStatus(err.message);}});
-  $('#odOtpVerify')?.addEventListener('submit',async e=>{e.preventDefault();try{const r=await fetch(`${base}/auth/v1/verify`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${anon}`,'Content-Type':'application/json'},body:JSON.stringify({email:$('#odEmail').value.trim(),token:$('#odOtpCode').value.trim(),type:'email'})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.msg||data.message||'Code could not be verified.');saveSession(data);refreshAccountButton();$('#odOtpVerify').hidden=true;$('#odSignOut').hidden=false;setAccountStatus(`Signed in as ${data.user?.email || 'your account'}.`);}catch(err){setAccountStatus(err.message);}});
-  $('#odSignOut')?.addEventListener('click',async()=>{try{if(session?.access_token&&ready)await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${session.access_token}`}});}catch{}saveSession(null);refreshAccountButton();setAccountStatus('Signed out of this browser.');});
+  $('#odGoogleSignIn')?.addEventListener('click',async()=>{
+    try{
+      if(!authClient)throw new Error('Backend or authentication library is not connected.');
+      setAccountStatus('Redirecting to Google…');
+      const redirectTo=window.location.origin+window.location.pathname;
+      const {error}=await authClient.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+      if(error)throw error;
+    }catch(err){setAccountStatus(err.message||'Google sign-in could not start.');}
+  });
+  $('#odOtpRequest')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    try{
+      if(!authClient)throw new Error('Backend not connected. Check the Supabase URL and publishable key.');
+      otpMethod='email';otpContact=$('#odEmail').value.trim();
+      const {error}=await authClient.auth.signInWithOtp({email:otpContact,options:{shouldCreateUser:true}});
+      if(error)throw error;
+      $('#odOtpRequest').hidden=true;$('#odPhoneRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odOtpVerify').hidden=false;
+      setAccountStatus('Email code requested. Check your inbox and spam folder.');
+    }catch(err){setAccountStatus(err.message||'Could not send email code.');}
+  });
+  $('#odUsePhone')?.addEventListener('click',()=>{
+    $('#odOtpRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odPhoneRequest').hidden=false;
+    setAccountStatus('Enter a number in international format. SMS requires a configured provider.');
+  });
+  $('#odPhoneRequest')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    try{
+      if(!authClient)throw new Error('Backend not connected.');
+      otpMethod='phone';otpContact=$('#odPhone').value.trim();
+      if(!/^\\+[1-9]\\d{7,14}$/.test(otpContact))throw new Error('Use international format, for example +2519XXXXXXXX.');
+      const {error}=await authClient.auth.signInWithOtp({phone:otpContact,options:{channel:'sms',shouldCreateUser:true}});
+      if(error)throw error;
+      $('#odPhoneRequest').hidden=true;$('#odOtpVerify').hidden=false;
+      setAccountStatus('SMS code requested. Check your messages.');
+    }catch(err){setAccountStatus(err.message||'SMS sign-in is not configured.');}
+  });
+  $('#odOtpVerify')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    try{
+      if(!authClient)throw new Error('Backend not connected.');
+      const token=$('#odOtpCode').value.trim();
+      const params=otpMethod==='phone'?{phone:otpContact,token,type:'sms'}:{email:otpContact,token,type:'email'};
+      const {data,error}=await authClient.auth.verifyOtp(params);
+      if(error)throw error;
+      if(!data?.session)throw new Error('Verification succeeded but no session was returned.');
+      saveSession(data.session);refreshAccountButton();$('#odOtpVerify').hidden=true;$('#odSignOut').hidden=false;
+      setAccountStatus(`Signed in as ${data.user?.email||data.user?.phone||'your account'}.`);
+    }catch(err){setAccountStatus(err.message||'Code could not be verified.');}
+  });
+  $('#odSignOut')?.addEventListener('click',async()=>{
+    try{if(authClient)await authClient.auth.signOut();else if(session?.access_token&&ready)await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${session.access_token}`}});}
+    catch{}
+    saveSession(null);refreshAccountButton();setAccountStatus('Signed out.');
+  });
   refreshAccountButton();
 
   // Replace the legacy local-preview feedback submit with moderated backend submission when configured.
