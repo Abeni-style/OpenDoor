@@ -1,4 +1,4 @@
-project_id = "opendoor-project"
+project_id = "hkhbiujfbysqtlqtuidx"
 
 [functions.student-assistant]
 verify_jwt = false
