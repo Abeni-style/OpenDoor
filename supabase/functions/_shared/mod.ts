@@ -1,4 +1,6 @@
-const frontendOrigin = Deno.env.get("FRONTEND_ORIGIN") || "http://localhost:8000";
+// Restrict browser access to the published OpenDoor origin. Set FRONTEND_ORIGIN
+// to an explicitly approved origin if the hosting address changes.
+const frontendOrigin = Deno.env.get("FRONTEND_ORIGIN") || "https://abeni-style.github.io";
 const corsHeaders = {
   "Access-Control-Allow-Origin": frontendOrigin,
   "Vary": "Origin",
