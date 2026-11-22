@@ -119,9 +119,20 @@
             <div><span>Member since</span><strong id="odProfileCreated">—</strong></div>
             <div><span>Membership</span><strong>Free account</strong></div>
           </div>
+          <section class="od-cloud-sync-panel" id="odCloudSyncPanel">
+            <h3>Cloud backup (optional)</h3>
+            <p>Back up selected profile basics, saved opportunity IDs, application tracker, completed lessons and planner tasks. Imported opportunity records, feedback comments, chat messages and essay/CV drafts are excluded. Sync is off until you enable it.</p>
+            <div class="od-cloud-sync-actions">
+              <button class="od-modal-secondary" id="odEnableCloudSync" type="button">Enable cloud backup</button>
+              <button class="od-modal-secondary" id="odSyncNow" type="button" hidden>Sync now</button>
+              <button class="od-modal-secondary" id="odDisableCloudSync" type="button" hidden>Disable sync on this device</button>
+            </div>
+            <p class="od-account-status" id="odCloudSyncStatus" role="status">Cloud backup is off.</p>
+            <small>Cloud backup stores selected student data in your account. If you are under 18, enable it only with the required parent/guardian permission. Avoid adding sensitive information to task titles.</small>
+          </section>
           <p class="od-account-status" id="odAccountStatusSignedIn" role="status">Your account session is active in this browser.</p>
           <button class="od-modal-secondary od-signout-button" id="odSignOut" type="button">Sign out</button>
-          <small>For your security, sign out when using a shared device. Account profile editing and cloud-synced student progress will be added after the profile service is deployed.</small>
+          <small>For your security, sign out when using a shared device.</small>
         </div>
       </section>
     </div>`;
@@ -265,6 +276,75 @@
     saveSession(null);refreshAccountButton();setAccountStatus('Signed out.');
   });
   refreshAccountButton();
+
+  // Optional, privacy-limited cloud backup. This is never enabled automatically.
+  const syncKeyFor=userId=>`opendoor.cloudsync.enabled.${userId}`;
+  const cloudSyncEnabled=()=>Boolean(session?.user?.id&&localStorage.getItem(syncKeyFor(session.user.id))==='yes');
+  function refreshCloudSyncUI(){
+    const enabled=cloudSyncEnabled();
+    const enable=$('#odEnableCloudSync'),now=$('#odSyncNow'),disable=$('#odDisableCloudSync'),status=$('#odCloudSyncStatus');
+    if(enable)enable.hidden=enabled;
+    if(now)now.hidden=!enabled;
+    if(disable)disable.hidden=!enabled;
+    if(status&&status.textContent==='')status.textContent=enabled?'Cloud backup is enabled on this device.':'Cloud backup is off.';
+  }
+  async function writeCloudWorkspace(){
+    if(!authClient||!session?.user?.id||!cloudSyncEnabled())return;
+    if(typeof window.OD_WORKSPACE_SNAPSHOT!=='function')throw new Error('Workspace backup code is not available. Refresh OpenDoor.');
+    const workspace=window.OD_WORKSPACE_SNAPSHOT();
+    const size=new TextEncoder().encode(JSON.stringify(workspace)).length;
+    if(size>60000)throw new Error('Workspace backup is too large. Remove old planner tasks and try again.');
+    const {error}=await authClient.from('student_workspaces').upsert({
+      user_id:session.user.id,workspace,updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+    if(error)throw error;
+  }
+  async function enableCloudWorkspace(){
+    if(!authClient||!session?.user?.id)throw new Error('Sign in before enabling cloud backup.');
+    const allowed=confirm('OpenDoor will store selected profile basics, saved opportunity IDs, application statuses, completed lesson IDs and planner tasks in your private account. It will not sync imported listings, feedback, chat or essay/CV drafts. If you are under 18, continue only with the required parent/guardian permission. Enable cloud backup?');
+    if(!allowed)return;
+    const {data,error}=await authClient.from('student_workspaces').select('workspace,updated_at').eq('user_id',session.user.id).maybeSingle();
+    if(error)throw error;
+    if(data?.workspace){
+      const restore=confirm('A cloud backup already exists. Click OK to restore that backup to this browser. Click Cancel to leave cloud backup disabled and avoid overwriting either copy.');
+      if(!restore)return;
+      if(typeof window.OD_APPLY_WORKSPACE!=='function')throw new Error('Workspace restore code is unavailable. Refresh OpenDoor.');
+      window.OD_APPLY_WORKSPACE(data.workspace);
+    }else{
+      localStorage.setItem(syncKeyFor(session.user.id),'yes');
+      await writeCloudWorkspace();
+    }
+    localStorage.setItem(syncKeyFor(session.user.id),'yes');
+    refreshCloudSyncUI();
+    const status=$('#odCloudSyncStatus');if(status)status.textContent='Cloud backup is enabled. Your selected workspace data is saved to your account.';
+  }
+  $('#odEnableCloudSync')?.addEventListener('click',async()=>{
+    const button=$('#odEnableCloudSync');if(button)button.disabled=true;
+    try{await enableCloudWorkspace();}
+    catch(error){const status=$('#odCloudSyncStatus');if(status)status.textContent=error.message||'Could not enable cloud backup.';}
+    finally{if(button)button.disabled=false;refreshCloudSyncUI();}
+  });
+  $('#odSyncNow')?.addEventListener('click',async()=>{
+    const status=$('#odCloudSyncStatus');if(status)status.textContent='Saving selected workspace data…';
+    try{await writeCloudWorkspace();if(status)status.textContent='Cloud backup updated successfully.';}
+    catch(error){if(status)status.textContent=error.message||'Cloud backup failed.';}
+  });
+  $('#odDisableCloudSync')?.addEventListener('click',()=>{
+    if(!session?.user?.id)return;
+    localStorage.removeItem(syncKeyFor(session.user.id));
+    refreshCloudSyncUI();
+    const status=$('#odCloudSyncStatus');if(status)status.textContent='Automatic cloud backup is now off. Your existing server backup has not been deleted.';
+  });
+  let cloudSyncTimer=null;
+  window.addEventListener('opendoor:local-state-changed',()=>{
+    if(!cloudSyncEnabled())return;
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer=setTimeout(async()=>{
+      try{await writeCloudWorkspace();const status=$('#odCloudSyncStatus');if(status)status.textContent='Cloud backup updated.';}
+      catch(error){const status=$('#odCloudSyncStatus');if(status)status.textContent=error.message||'Cloud backup could not be updated.';}
+    },1000);
+  });
+  refreshCloudSyncUI();
 
   // Replace the legacy local-preview feedback submit with moderated backend submission when configured.
   document.addEventListener('submit', async e=>{
