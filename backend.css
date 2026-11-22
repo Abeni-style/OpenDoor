@@ -17,3 +17,11 @@
 .od-account-details strong{font:700 13px Inter,system-ui;color:#24314d;overflow-wrap:anywhere}
 .od-profile-avatar{width:54px;height:54px;display:grid;place-items:center;margin:18px 0 12px;border-radius:17px;background:linear-gradient(135deg,#635bff,#17b8c3);color:#fff;font:800 22px Inter,system-ui;box-shadow:0 8px 24px #5145cd30}
 .od-signout-button{width:100%;margin-top:8px}
+
+/* Optional cloud backup controls */
+.od-cloud-sync-panel{margin:18px 0;padding:16px;border:1px solid #dfe5f1;border-radius:14px;background:#f7f9fe}
+.od-cloud-sync-panel h3{margin:0 0 7px;color:#1b2843;font:800 14px Inter,system-ui}
+.od-cloud-sync-panel p{margin:7px 0;color:#63718a;font:11px/1.6 Inter,system-ui}
+.od-cloud-sync-actions{display:flex;flex-wrap:wrap;gap:8px}
+.od-cloud-sync-actions button{margin-top:5px}
+.od-cloud-sync-panel [hidden]{display:none!important}
