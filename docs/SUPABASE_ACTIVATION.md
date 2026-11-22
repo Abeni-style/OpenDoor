@@ -16,7 +16,7 @@ Use an adult/organization-controlled Supabase account for a student-facing servi
 
 4. In the Supabase SQL Editor, run `supabase/migrations/0002_student_workspaces.sql` once to add the RLS-protected opt-in student workspace backup table. Then run `supabase/seed_discovery_candidates.sql` once. It seeds discovery candidates as pending review; it does not make them public.
 
-## B. Configure email one-time-code authentication
+## B. Configure email magic-link authentication
 
 1. In Supabase Dashboard open Authentication → Sign In / Providers → Email.
 2. Enable email sign-in. OpenDoor currently uses Supabase's default Magic Link flow, so keep the default Magic Link template and ensure it contains `{{ .ConfirmationURL }}`. Custom SMTP is optional for the initial test and required for reliable production sending.
@@ -27,7 +27,7 @@ Use an adult/organization-controlled Supabase account for a student-facing servi
 
 ## C. Configure the public frontend connection
 
-Edit **both** `backend-config.js` in the project root and rerun `python scripts/build_public_site.py`. This rebuilds `public/backend-config.js` for deployment.
+Edit `backend-config.js` in the GitHub repository. The GitHub Pages Actions workflow rebuilds the safe public site automatically after a commit; a local Python installation is not required.
 
 ```js
 window.OPENDOOR_CONFIG = {
@@ -61,7 +61,7 @@ The key must not appear in `backend-config.js`, HTML, JavaScript, CSV, Git histo
 
 ## E. Deploy Edge Functions
 
-Run from the project root after linking the project:
+For local administrator deployments, install the Supabase CLI, link the project and run the following commands. Alternatively, use the manual GitHub Actions workflow in Section F:
 
 ```bash
 supabase functions deploy student-assistant --no-verify-jwt
