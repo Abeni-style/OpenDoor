@@ -2,12 +2,6 @@ name: Deploy OpenDoor Supabase Edge Functions
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/functions/**'
-      - 'supabase/config.toml'
-      - '.github/workflows/deploy-supabase.yml'
 
 permissions:
   contents: read
