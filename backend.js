@@ -160,7 +160,7 @@
     try{
       if(!authClient)throw new Error('Backend not connected.');
       otpMethod='phone';otpContact=$('#odPhone').value.trim();
-      if(!/^\\+[1-9]\\d{7,14}$/.test(otpContact))throw new Error('Use international format, for example +2519XXXXXXXX.');
+      if(!/^\+[1-9]\d{7,14}$/.test(otpContact))throw new Error('Use international format, for example +2519XXXXXXXX.');
       const {error}=await authClient.auth.signInWithOtp({phone:otpContact,options:{channel:'sms',shouldCreateUser:true}});
       if(error)throw error;
       $('#odPhoneRequest').hidden=true;$('#odOtpVerify').hidden=false;
