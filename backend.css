@@ -9,3 +9,11 @@
 .od-chat-quick button{border:1px solid #39486a;background:#17223c;color:#dbe6ff;border-radius:999px;padding:7px 10px;font:inherit;font-size:11px;cursor:pointer}
 .od-chat-quick button:hover{border-color:#8b7bff;background:#202d4b}
 .od-chat-msg.bot{white-space:pre-wrap;line-height:1.5}
+
+/* Signed-in student account panel */
+.od-account-details{display:grid;gap:9px;margin:18px 0}
+.od-account-details>div{display:flex;flex-direction:column;gap:4px;padding:11px 12px;background:#f5f7fc;border:1px solid #e5e9f3;border-radius:11px}
+.od-account-details span{font:700 10px Inter,system-ui;color:#7b879b;text-transform:uppercase;letter-spacing:.06em}
+.od-account-details strong{font:700 13px Inter,system-ui;color:#24314d;overflow-wrap:anywhere}
+.od-profile-avatar{width:54px;height:54px;display:grid;place-items:center;margin:18px 0 12px;border-radius:17px;background:linear-gradient(135deg,#635bff,#17b8c3);color:#fff;font:800 22px Inter,system-ui;box-shadow:0 8px 24px #5145cd30}
+.od-signout-button{width:100%;margin-top:8px}
