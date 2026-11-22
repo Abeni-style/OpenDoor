@@ -38,7 +38,7 @@
   if (root) root.innerHTML = `
     <button class="od-chat-launch" id="odChatLaunch" aria-label="Open OpenDoor Guide"><span class="od-chat-spark">✦</span><span>Ask OpenDoor</span></button>
     <section class="od-chat-panel" id="odChatPanel" aria-label="OpenDoor student assistant" hidden>
-      <header class="od-chat-head"><div><span class="od-chat-orb">✦</span><div><b>OpenDoor Guide</b><small>${ready ? 'Connected AI service' : 'Local guide · AI service not connected'}</small></div></div><button id="odChatClose" aria-label="Close assistant">×</button></header>
+      <header class="od-chat-head"><div><span class="od-chat-orb">✦</span><div><b>OpenDoor Guide</b><small>${ready ? 'Backend configured · AI availability not yet verified' : 'Local guide · AI service not connected'}</small></div></div><button id="odChatClose" aria-label="Close assistant">×</button></header>
       <div class="od-chat-notice">AI-generated guidance can be wrong. Verify current eligibility, deadlines and funding on official provider websites. Do not share personal or sensitive information.</div>
       <div class="od-chat-quick"><button type="button" data-od-prompt="How do I find opportunities that fit my age and country?">Find opportunities</button><button type="button" data-od-prompt="Explain fully funded versus partially funded programs.">Understand funding</button><button type="button" data-od-prompt="Help me prepare an application checklist.">Prepare an application</button></div><div class="od-chat-messages" id="odChatMessages"><div class="od-chat-msg bot">Hello. I can help you navigate OpenDoor, understand opportunity information and plan your next steps. What do you need help with?</div></div>
       <form id="odChatForm" class="od-chat-form"><textarea id="odChatInput" rows="2" maxlength="3000" placeholder="Ask a question…" required></textarea><button id="odChatSend" type="submit" aria-label="Send message">↑</button></form>
@@ -83,9 +83,9 @@
         .slice(0,5).map(o=>o.id).filter(id=>/^[0-9a-f-]{36}$/i.test(String(id)));
       if(!ready){const answer=localGuideReply(message);wait.remove();appendMessage('bot',answer);history.push({role:'user',content:message},{role:'assistant',content:answer});history=history.slice(-8);return;}
       const result=await functionCall('student-assistant',{message,history,verified_ids:verifiedIds});
-      wait.remove(); appendMessage('bot',result.answer || 'I could not generate an answer.');
+      wait.remove(); const serviceStatus=$('#odChatServiceStatus');if(serviceStatus)serviceStatus.textContent='AI service responding'; appendMessage('bot',result.answer || 'I could not generate an answer.');
       history.push({role:'user',content:message},{role:'assistant',content:result.answer||''}); history=history.slice(-8);
-    } catch(err) { wait.remove(); const answer=localGuideReply(message)+`\n\nThe live AI service could not be reached: ${err.message}`; appendMessage('bot',answer); }
+    } catch(err) { wait.remove(); const serviceStatus=$('#odChatServiceStatus');if(serviceStatus)serviceStatus.textContent='Live AI unavailable · offline guidance active'; const answer=localGuideReply(message)+`\n\nThe live AI service could not be reached: ${err.message}`; appendMessage('bot',answer); }
     finally { assistantBusy=false; $('#odChatSend').disabled=false; input.focus(); }
   });
 
@@ -186,12 +186,14 @@
       if(data?.session){saveSession(data.session);}
       else if(!session){saveSession(null);}
       refreshAccountButton();
+      refreshCloudSyncUI();
       if(error)console.warn('Supabase session check failed.');
     });
     authClient.auth.onAuthStateChange((_event,newSession)=>{
       if(newSession){saveSession(newSession);}
       else{saveSession(null);}
       refreshAccountButton();
+      refreshCloudSyncUI();
     });
   }
   $('#odAccountOpen')?.addEventListener('click',async()=>{
@@ -215,6 +217,7 @@
       }catch(error){console.warn('Could not refresh account details.');}
     }
     refreshAccountButton();
+    refreshCloudSyncUI();
     if(!session?.access_token)setAccountStatus(!ready?'Backend not connected.':!authClient?'Authentication client did not load. Refresh the page.':'Choose Google or email to sign in.');
   });
   $('#odAccountClose')?.addEventListener('click',()=>$('#odAccountModal').hidden=true);
