@@ -4,7 +4,53 @@ const emptyState={profile:{country:'',age:'',grade:'',interests:[]},saved:[],app
 const clone=x=>JSON.parse(JSON.stringify(x));
 let state=load(),page=(location.hash||'#home').slice(1),track='All',courseOpen=null;
 function load(){try{const current=localStorage.getItem(KEY);let parsed=null;if(current)parsed=JSON.parse(current);else{const legacy=localStorage.getItem('opendoor.v1');if(legacy)parsed=JSON.parse(legacy);}if(!parsed||typeof parsed!=='object')return clone(emptyState);const merged={...clone(emptyState),...parsed,profile:{...clone(emptyState.profile),...(parsed.profile&&typeof parsed.profile==='object'?parsed.profile:{})}};for(const key of ['saved','applications','completed','tasks','custom','feedback'])if(!Array.isArray(merged[key]))merged[key]=[];if(!Array.isArray(merged.profile.interests))merged.profile.interests=[];if(current)localStorage.setItem(KEY,JSON.stringify(merged));return merged;}catch{return clone(emptyState);}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch{notify('Could not save in this browser. Export a backup.');}}
+function save(){
+ try{localStorage.setItem(KEY,JSON.stringify(state));}
+ catch{notify('Could not save in this browser. Export a backup.');}
+ try{window.dispatchEvent(new CustomEvent('opendoor:local-state-changed'));}
+ catch{}
+}
+// Cloud backup is opt-in and excludes imported opportunity records, free-text feedback and essay/CV drafts.
+window.OD_WORKSPACE_SNAPSHOT = function(){
+ const age=Number(state.profile?.age||0);
+ const ageBand=age>=13&&age<=15?'13-15':age>=16&&age<=17?'16-17':age>=18&&age<=24?'18-24':age>=25?'25+':null;
+ return {
+  version:1,
+  profile:{
+   country:String(state.profile?.country||'').slice(0,80),
+   age_band:ageBand,
+   grade:String(state.profile?.grade||'').slice(0,80),
+   interests:(Array.isArray(state.profile?.interests)?state.profile.interests:[]).slice(0,20).map(x=>String(x).slice(0,60))
+  },
+  saved:(Array.isArray(state.saved)?state.saved:[]).slice(0,500).map(x=>String(x).slice(0,120)),
+  applications:(Array.isArray(state.applications)?state.applications:[]).slice(0,100).map(x=>({
+   id:String(x.id||'').slice(0,120),title:String(x.title||'').slice(0,180),
+   category:String(x.category||'').slice(0,80),status:String(x.status||'Considering').slice(0,40)
+  })),
+  completed:(Array.isArray(state.completed)?state.completed:[]).slice(0,500).map(x=>String(x).slice(0,120)),
+  tasks:(Array.isArray(state.tasks)?state.tasks:[]).slice(0,200).map(x=>({
+   id:String(x.id||'').slice(0,80),title:String(x.title||'').slice(0,160),
+   due:String(x.due||'').slice(0,20),category:String(x.category||'').slice(0,50),done:Boolean(x.done)
+  }))
+ };
+};
+window.OD_APPLY_WORKSPACE = function(remote){
+ if(!remote||typeof remote!=='object'||remote.version!==1)throw new Error('Cloud backup format is not supported.');
+ const p=remote.profile&&typeof remote.profile==='object'?remote.profile:{};
+ state={
+  ...clone(emptyState),
+  profile:{
+   country:String(p.country||'').slice(0,80),age:'',grade:String(p.grade||'').slice(0,80),
+   interests:Array.isArray(p.interests)?p.interests.slice(0,20).map(x=>String(x).slice(0,60)):[]
+  },
+  saved:Array.isArray(remote.saved)?remote.saved.slice(0,500).map(String):[],
+  applications:Array.isArray(remote.applications)?remote.applications.slice(0,100):[],
+  completed:Array.isArray(remote.completed)?remote.completed.slice(0,500).map(String):[],
+  tasks:Array.isArray(remote.tasks)?remote.tasks.slice(0,200):[],
+  custom:[],feedback:[]
+ };
+ save();render();
+};
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function notify(s){const t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 function allOpp(){return [...(OD_DATA.opportunities||[]),...(state.custom||[])];}
