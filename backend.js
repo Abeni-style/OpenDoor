@@ -98,8 +98,8 @@
       <p>Choose a sign-in method. Use only an account you are authorized to use. Never share verification codes.</p>
       <button class="od-modal-secondary" id="odGoogleSignIn" type="button">Continue with Google</button>
       <div class="od-auth-divider">OR USE EMAIL</div>
-      <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Send email code</button></form>
-      <button class="od-modal-secondary" id="odUsePhone" type="button">Use a phone number instead</button>
+      <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Email me a secure sign-in link</button></form>
+      <button class="od-modal-secondary" id="odUsePhone" type="button" hidden>Use a phone number instead</button>
       <form id="odPhoneRequest" hidden><label>Phone number (international format)</label><input type="tel" id="odPhone" maxlength="16" autocomplete="tel" inputmode="tel" pattern="\\+[1-9][0-9]{7,14}" placeholder="+2519XXXXXXXX" required><button class="od-modal-primary">Send SMS code</button><small>SMS sign-in is available only after the administrator configures a supported SMS provider.</small></form>
       <form id="odOtpVerify" hidden><label>Six-digit verification code</label><input id="odOtpCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000"><button class="od-modal-primary">Verify and sign in</button></form>
       <button class="od-modal-secondary" id="odSignOut" hidden>Sign out</button><p class="od-account-status" id="odAccountStatus" role="status"></p>
@@ -144,13 +144,15 @@
     e.preventDefault();
     try{
       if(!authClient)throw new Error('Backend not connected. Check the Supabase URL and publishable key.');
-      otpMethod='email';otpContact=$('#odEmail').value.trim();
-      const {error}=await authClient.auth.signInWithOtp({email:otpContact,options:{shouldCreateUser:true}});
+      otpContact=$('#odEmail').value.trim();
+      const emailRedirectTo=window.location.origin+window.location.pathname;
+      const {error}=await authClient.auth.signInWithOtp({email:otpContact,options:{shouldCreateUser:true,emailRedirectTo}});
       if(error)throw error;
-      $('#odOtpRequest').hidden=true;$('#odPhoneRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odOtpVerify').hidden=false;
-      setAccountStatus('Email code requested. Check your inbox and spam folder.');
+      $('#odOtpRequest').hidden=true;$('#odPhoneRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odOtpVerify').hidden=true;
+      setAccountStatus('A secure sign-in link has been requested. Check your inbox (and spam folder), then open the link in this same browser. You will return to OpenDoor automatically.');
     }catch(err){setAccountStatus(err.message||'Could not send email code.');}
   });
+  if(cfg.ENABLE_PHONE_AUTH !== true){const phoneBtn=$('#odUsePhone');if(phoneBtn)phoneBtn.hidden=true;}
   $('#odUsePhone')?.addEventListener('click',()=>{
     $('#odOtpRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odPhoneRequest').hidden=false;
     setAccountStatus('Enter a number in international format. SMS requires a configured provider.');
