@@ -89,22 +89,42 @@
     finally { assistantBusy=false; $('#odChatSend').disabled=false; input.focus(); }
   });
 
-  // Supabase Auth: email OTP, Google OAuth and optional phone OTP.
+  // Supabase Auth: account dashboard for signed-in users; login choices for visitors.
   const accountRoot=$('#odAccountRoot');
   if(accountRoot) accountRoot.innerHTML=`
-    <button class="od-account-btn" id="odAccountOpen">${session?.user?.email?'Account':'Sign in'}</button>
-    <div class="od-modal-backdrop" id="odAccountModal" hidden><section class="od-account-modal" role="dialog" aria-modal="true" aria-labelledby="odAccountTitle">
-      <button class="od-modal-close" id="odAccountClose" aria-label="Close">×</button><span class="od-modal-kicker">YOUR STUDENT WORKSPACE</span><h2 id="odAccountTitle">Sign in to OpenDoor</h2>
-      <p>Choose a sign-in method. Use only an account you are authorized to use. Never share verification codes.</p>
-      <button class="od-modal-secondary" id="odGoogleSignIn" type="button">Continue with Google</button>
-      <div class="od-auth-divider">OR USE EMAIL</div>
-      <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Email me a secure sign-in link</button></form>
-      <button class="od-modal-secondary" id="odUsePhone" type="button" hidden>Use a phone number instead</button>
-      <form id="odPhoneRequest" hidden><label>Phone number (international format)</label><input type="tel" id="odPhone" maxlength="16" autocomplete="tel" inputmode="tel" pattern="\\+[1-9][0-9]{7,14}" placeholder="+2519XXXXXXXX" required><button class="od-modal-primary">Send SMS code</button><small>SMS sign-in is available only after the administrator configures a supported SMS provider.</small></form>
-      <form id="odOtpVerify" hidden><label>Six-digit verification code</label><input id="odOtpCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000"><button class="od-modal-primary">Verify and sign in</button></form>
-      <button class="od-modal-secondary" id="odSignOut" hidden>Sign out</button><p class="od-account-status" id="odAccountStatus" role="status"></p>
-      <small>Only the minimum information needed for an account should be collected. For younger students, follow applicable parent/guardian consent and privacy rules.</small>
-    </section></div>`;
+    <button class="od-account-btn" id="odAccountOpen">Sign in</button>
+    <div class="od-modal-backdrop" id="odAccountModal" hidden>
+      <section class="od-account-modal" role="dialog" aria-modal="true" aria-labelledby="odAccountTitle">
+        <button class="od-modal-close" id="odAccountClose" aria-label="Close">×</button>
+        <span class="od-modal-kicker">YOUR STUDENT WORKSPACE</span>
+        <div id="odSignInPanel">
+          <h2 id="odAccountTitle">Sign in to OpenDoor</h2>
+          <p>Choose a sign-in method. Use only an account you are authorized to use. Never share verification codes.</p>
+          <button class="od-modal-secondary" id="odGoogleSignIn" type="button">Continue with Google</button>
+          <div class="od-auth-divider">OR USE EMAIL</div>
+          <form id="odOtpRequest"><label>Email address</label><input type="email" id="odEmail" maxlength="254" autocomplete="email" required placeholder="you@example.com"><button class="od-modal-primary">Email me a secure sign-in link</button></form>
+          <button class="od-modal-secondary" id="odUsePhone" type="button" hidden>Use a phone number instead</button>
+          <form id="odPhoneRequest" hidden><label>Phone number (international format)</label><input type="tel" id="odPhone" maxlength="16" autocomplete="tel" inputmode="tel" pattern="\\+[1-9][0-9]{7,14}" placeholder="+2519XXXXXXXX" required><button class="od-modal-primary">Send SMS code</button><small>SMS sign-in is available only after the administrator configures a supported provider.</small></form>
+          <form id="odOtpVerify" hidden><label>Six-digit verification code</label><input id="odOtpCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000"><button class="od-modal-primary">Verify and sign in</button></form>
+          <p class="od-account-status" id="odAccountStatus" role="status"></p>
+          <small>Only the minimum information needed for an account should be collected. For younger students, follow applicable parent/guardian consent and privacy rules.</small>
+        </div>
+        <div id="odSignedInPanel" hidden>
+          <div class="od-profile-avatar" id="odProfileAvatar" aria-hidden="true">O</div>
+          <h2 id="odSignedInName">Your account</h2>
+          <p id="odSignedInSummary">You are signed in to OpenDoor.</p>
+          <div class="od-account-details">
+            <div><span>Email / phone</span><strong id="odProfileContact">—</strong></div>
+            <div><span>Sign-in method</span><strong id="odProfileProvider">—</strong></div>
+            <div><span>Member since</span><strong id="odProfileCreated">—</strong></div>
+            <div><span>Membership</span><strong>Free account</strong></div>
+          </div>
+          <p class="od-account-status" id="odAccountStatusSignedIn" role="status">Your account session is active in this browser.</p>
+          <button class="od-modal-secondary od-signout-button" id="odSignOut" type="button">Sign out</button>
+          <small>For your security, sign out when using a shared device. Account profile editing and cloud-synced student progress will be added after the profile service is deployed.</small>
+        </div>
+      </section>
+    </div>`;
   const topbar = $('.topbar');
   if (topbar && $('#odAccountOpen')) {
     const exportButton = topbar.querySelector('[data-act="export"]');
@@ -114,21 +134,77 @@
     ? window.supabase.createClient(base, anon, { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, flowType:'pkce' } })
     : null;
   let otpMethod='email', otpContact='';
-  function setAccountStatus(s){const el=$('#odAccountStatus');if(el)el.textContent=s;}
-  function refreshAccountButton(){const b=$('#odAccountOpen');if(b)b.textContent=session?.user?.email?'My account':session?.user?.phone?'My account':'Sign in';const out=$('#odSignOut');if(out)out.hidden=!session;}
+  function setAccountStatus(s){
+    const el=$('#odAccountStatus'); if(el)el.textContent=s;
+    const signed=$('#odAccountStatusSignedIn'); if(signed) signed.textContent=s;
+  }
+  function refreshAccountButton(){
+    const user=session?.user;
+    const signedIn=Boolean(session?.access_token && user);
+    const button=$('#odAccountOpen');
+    if(button)button.textContent=signedIn?'My account':'Sign in';
+    const loginPanel=$('#odSignInPanel');
+    const accountPanel=$('#odSignedInPanel');
+    if(loginPanel)loginPanel.hidden=signedIn;
+    if(accountPanel)accountPanel.hidden=!signedIn;
+    const title=$('#odAccountTitle');
+    if(title)title.textContent=signedIn?'Your OpenDoor account':'Sign in to OpenDoor';
+    if(!signedIn)return;
+    const metadata=user.user_metadata||{};
+    const contact=user.email||user.phone||'Contact method not provided';
+    const displayName=metadata.full_name||metadata.name||metadata.display_name||metadata.preferred_username||'Student account';
+    const provider=user.app_metadata?.provider|| (user.email?'Email':'Phone');
+    const avatar=$('#odProfileAvatar');
+    const name=$('#odSignedInName');
+    const summary=$('#odSignedInSummary');
+    const contactEl=$('#odProfileContact');
+    const providerEl=$('#odProfileProvider');
+    const createdEl=$('#odProfileCreated');
+    if(avatar)avatar.textContent=String(displayName).trim().charAt(0).toUpperCase()||'O';
+    if(name)name.textContent=displayName;
+    if(summary)summary.textContent='Your OpenDoor account is signed in and active in this browser.';
+    if(contactEl)contactEl.textContent=contact;
+    if(providerEl)providerEl.textContent=provider.charAt(0).toUpperCase()+provider.slice(1);
+    if(createdEl){
+      const date=user.created_at?new Date(user.created_at):null;
+      createdEl.textContent=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}):'Date unavailable';
+    }
+  }
   if(authClient){
     authClient.auth.getSession().then(({data,error})=>{
-      if(data?.session){saveSession(data.session);refreshAccountButton();}
-      else if(error)console.warn('Supabase session check failed.');
+      if(data?.session){saveSession(data.session);}
+      else if(!session){saveSession(null);}
+      refreshAccountButton();
+      if(error)console.warn('Supabase session check failed.');
     });
     authClient.auth.onAuthStateChange((_event,newSession)=>{
-      if(newSession){saveSession(newSession);refreshAccountButton();}
-      else if(!session){refreshAccountButton();}
+      if(newSession){saveSession(newSession);}
+      else{saveSession(null);}
+      refreshAccountButton();
     });
   }
-  $('#odAccountOpen')?.addEventListener('click',()=>{
-    $('#odAccountModal').hidden=false;refreshAccountButton();
-    setAccountStatus(!ready?'Backend not connected.':!authClient?'Authentication library did not load. Refresh the page.':'Choose Google or email. Phone requires SMS-provider configuration.');
+  $('#odAccountOpen')?.addEventListener('click',async()=>{
+    $('#odAccountModal').hidden=false;
+    refreshAccountButton();
+    if(authClient){
+      try{
+        if(session?.access_token){
+          const {data,error}=await authClient.auth.getUser(session.access_token);
+          if(!error&&data?.user){
+            session.user=data.user;
+            saveSession(session);
+          }else{
+            const {data:current}=await authClient.auth.getSession();
+            saveSession(current?.session||null);
+          }
+        }else{
+          const {data}=await authClient.auth.getSession();
+          saveSession(data?.session||null);
+        }
+      }catch(error){console.warn('Could not refresh account details.');}
+    }
+    refreshAccountButton();
+    if(!session?.access_token)setAccountStatus(!ready?'Backend not connected.':!authClient?'Authentication client did not load. Refresh the page.':'Choose Google or email to sign in.');
   });
   $('#odAccountClose')?.addEventListener('click',()=>$('#odAccountModal').hidden=true);
   $('#odGoogleSignIn')?.addEventListener('click',async()=>{
@@ -149,8 +225,8 @@
       const {error}=await authClient.auth.signInWithOtp({email:otpContact,options:{shouldCreateUser:true,emailRedirectTo}});
       if(error)throw error;
       $('#odOtpRequest').hidden=true;$('#odPhoneRequest').hidden=true;$('#odGoogleSignIn').hidden=true;$('#odUsePhone').hidden=true;$('#odOtpVerify').hidden=true;
-      setAccountStatus('A secure sign-in link has been requested. Check your inbox (and spam folder), then open the link in this same browser. You will return to OpenDoor automatically.');
-    }catch(err){setAccountStatus(err.message||'Could not send email code.');}
+      setAccountStatus('A secure sign-in link has been requested. Check your inbox and spam folder, then open it in this browser.');
+    }catch(err){setAccountStatus(err.message||'Could not send email sign-in link.');}
   });
   if(cfg.ENABLE_PHONE_AUTH !== true){const phoneBtn=$('#odUsePhone');if(phoneBtn)phoneBtn.hidden=true;}
   $('#odUsePhone')?.addEventListener('click',()=>{
@@ -162,7 +238,7 @@
     try{
       if(!authClient)throw new Error('Backend not connected.');
       otpMethod='phone';otpContact=$('#odPhone').value.trim();
-      if(!/^\+[1-9]\d{7,14}$/.test(otpContact))throw new Error('Use international format, for example +2519XXXXXXXX.');
+      if(!/^\\+[1-9]\\d{7,14}$/.test(otpContact))throw new Error('Use international format, for example +2519XXXXXXXX.');
       const {error}=await authClient.auth.signInWithOtp({phone:otpContact,options:{channel:'sms',shouldCreateUser:true}});
       if(error)throw error;
       $('#odPhoneRequest').hidden=true;$('#odOtpVerify').hidden=false;
@@ -178,13 +254,14 @@
       const {data,error}=await authClient.auth.verifyOtp(params);
       if(error)throw error;
       if(!data?.session)throw new Error('Verification succeeded but no session was returned.');
-      saveSession(data.session);refreshAccountButton();$('#odOtpVerify').hidden=true;$('#odSignOut').hidden=false;
+      saveSession(data.session);
+      refreshAccountButton();
       setAccountStatus(`Signed in as ${data.user?.email||data.user?.phone||'your account'}.`);
     }catch(err){setAccountStatus(err.message||'Code could not be verified.');}
   });
   $('#odSignOut')?.addEventListener('click',async()=>{
-    try{if(authClient)await authClient.auth.signOut();else if(session?.access_token&&ready)await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon,Authorization:`Bearer ${session.access_token}`}});}
-    catch{}
+    try{if(authClient)await authClient.auth.signOut();}
+    catch(err){setAccountStatus(err.message||'Could not complete sign out.');return;}
     saveSession(null);refreshAccountButton();setAccountStatus('Signed out.');
   });
   refreshAccountButton();
